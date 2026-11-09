@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 
+
 export const payloadUsuario = async (req: Request, res: Response) => {
     
     return res.json({
@@ -17,7 +18,17 @@ export const payloadUsuario = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    
+
+    const redis = (global as any).redis;
+    const chaveRedis = `login:tentativas:${email}`;
+
+     const tentativas = await redis.get(chaveRedis);
+    console.log(tentativas);
+      if (tentativas && Number(tentativas) >= 5) {
+        return res.status(429).json({
+            mensagem: 'Muitas tentativas. Tente novamente mais tarde.'
+        });
+    }
     const query =
         `SELECT * FROM usuario WHERE email = $1 AND senha = $2`;
 
@@ -37,12 +48,20 @@ export const login = async (req: Request, res: Response) => {
 
         const csrfToken = crypto.randomBytes(32).toString("hex");
         
+        await redis.del(chaveRedis);
         res.json({
             success: true,
             cryptoToken: csrfToken
         });
 
     } else {
+        const total = await redis.incr(chaveRedis);
+
+        // Primeira tentativa: define expiração de 15 minutos
+        if (total === 1) {
+            await redis.expire(chaveRedis, 15 * 60);
+        }
+
         res.status(401).json({
             success: false,
             message: "Falha no login"

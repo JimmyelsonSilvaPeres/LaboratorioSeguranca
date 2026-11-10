@@ -14,15 +14,15 @@ export default defineConfig({
   server: {
     proxy: {
       "/usuario": {
-        target: "http://localhost:3001",
+        target: "/proxizinhodoteacher/",
         changeOrigin: true,
       },
       "/comentario": {
-        target: "http://localhost:3001",
+        target: "/proxizinhodoteacher/",
         changeOrigin: true,
       },
       "/hacker-malvadao": {
-        target: "http://localhost:3001",
+        target: "/proxizinhodoteacher/",
         changeOrigin: true,
       },
     },
